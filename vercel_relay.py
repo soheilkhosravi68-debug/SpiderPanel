@@ -59,7 +59,7 @@ def _collect_files(base: Path) -> list[dict]:
             continue
         rel = path.relative_to(base).as_posix()
         files.append({
-            "file": rel,
+            "file": _UPLOAD_NAME_OVERRIDES.get(rel, rel),
             "data": base64.b64encode(path.read_bytes()).decode("ascii"),
             "encoding": "base64",
         })
