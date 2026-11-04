@@ -3,3 +3,8 @@ A unified platform for anti-censorship.
 2026/11/04 19:40:05.175116 [Info] infra/conf/serial: Reading config: &{Name:/workspace/SpiderPanel/xray/config.json Format:json}
 2026/11/04 19:40:05.176283 [Warning] infra/conf: REALITY: Listening on non-443 ports may get your IP blocked by the GFW
 2026/11/04 19:40:05.177369 [Warning] core: Xray 26.3.27 started
+Xray 26.3.27 (Xray, Penetrates Everything.) d2758a0 (go1.26.1 linux/amd64)
+A unified platform for anti-censorship.
+2026/11/04 19:54:30.226841 [Info] infra/conf/serial: Reading config: &{Name:/workspace/SpiderPanel/xray/config.json Format:json}
+2026/11/04 19:54:30.228864 [Warning] infra/conf: REALITY: Listening on non-443 ports may get your IP blocked by the GFW
+2026/11/04 19:54:30.230898 [Warning] core: Xray 26.3.27 started
