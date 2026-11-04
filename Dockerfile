@@ -3,36 +3,41 @@
 ########## build stage ##########
 # Compiles MTProxy and installs Python dependencies in a throwaway layer so the
 # compiler toolchain never ships in the final image.
-FROM python:3.13-slim AS builder
+#
+# Alpine (musl) is used instead of Debian: the Debian slim base carries
+# glibc/curl advisories with no fixed version published for Debian 12/13/14,
+# and Debian's libcurl3t64-gnutls maps to the curl source package. Alpine 3.24
+# ships patched musl and curl (8.23.0-r0) closures, and every pinned Python
+# dependency publishes a musllinux wheel for cp313 x86_64.
+FROM python:3.13-alpine AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN apt-get update \
-    && apt-get upgrade -y --no-install-recommends \
-    && apt-get install -y --no-install-recommends \
-       build-essential \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache \
+       build-base \
+       linux-headers \
+       openssl-dev \
+       zlib-dev \
+       pkgconf \
        git \
        curl \
-       ca-certificates \
-       libssl-dev \
-       zlib1g-dev \
-       pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+       ca-certificates
 
 # Build MTProxy where supported and leave the binary in /out.
 RUN set -eux; \
     mkdir -p /out; \
-    arch="$(dpkg --print-architecture)"; \
+    arch="$(apk --print-arch)"; \
     case "$arch" in \
-      amd64) \
+      x86_64) \
         git clone --depth 1 \
           https://github.com/TelegramMessenger/MTProxy.git /tmp/MTProxy; \
         if ! make -C /tmp/MTProxy; then \
           make -C /tmp/MTProxy clean || true; \
-          echo "ERROR: MTProxy compilation failed on AMD64."; \
+          echo "ERROR: MTProxy compilation failed on x86_64."; \
           exit 1; \
         fi; \
         install -m 0755 \
@@ -40,7 +45,7 @@ RUN set -eux; \
           /out/mtproto-proxy; \
         rm -rf /tmp/MTProxy \
         ;; \
-      arm64) \
+      aarch64) \
         echo "ARM64 detected: upstream MTProxy build skipped."; \
         echo "The panel will build, but MTProxy is not available."; \
         ;; \
@@ -57,7 +62,7 @@ RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
 
 ########## runtime stage ##########
-FROM python:3.13-slim
+FROM python:3.13-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -66,14 +71,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
 # Apply distributor security updates, then install only the runtime tools the
-# panel actually needs. The curl CLI and the build toolchain stay out of the
-# final image because they are not used at runtime.
-RUN apt-get update \
-    && apt-get upgrade -y --no-install-recommends \
-    && apt-get install -y --no-install-recommends \
+# panel actually needs (`git` backs the panel self-update endpoint). The build
+# toolchain, curl CLI and compiler headers stay out of the final image.
+RUN apk upgrade --no-cache \
+    && apk add --no-cache \
        ca-certificates \
        git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
