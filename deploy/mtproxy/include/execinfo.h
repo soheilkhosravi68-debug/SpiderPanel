@@ -2,85 +2,42 @@
  * Minimal <execinfo.h> shim for musl (Alpine), used to build upstream MTProxy.
  *
  * MTProxy's common/server-functions.c includes <execinfo.h> unconditionally to
- * print a stack backtrace when it aborts. glibc provides that header and the
+ * print a stack backtrace when it aborts. glibc provides that header plus the
  * backtrace()/backtrace_symbols_fd() pair; musl ships neither (and Alpine does
- * not package libexecinfo), so the build fails with
+ * not package libexecinfo), so compilation fails with
  *   fatal error: execinfo.h: No such file or directory
  *
- * This shim implements the same two functions on top of libgcc's unwinder,
- * which is available in every gcc toolchain, and names frames through dladdr()
- * like glibc does (falling back to the raw address). Only the two functions
- * MTProxy calls are provided. On glibc this file is never used.
+ * This shim provides the two functions MTProxy calls so the build is
+ * self-contained and cannot fail at link time.
+ *
+ * Why the backtrace body is intentionally empty: the obvious implementation
+ * drives libgcc's unwinder (_Unwind_Backtrace), but that pulls in libgcc_eh,
+ * whose frame-unwind registration object references the glibc-only
+ * _dl_find_object() symbol on glibc-based toolchains. That fails to link
+ * against musl ("undefined reference to `_dl_find_object'"), which would turn a
+ * cosmetic diagnostic into a hard build failure. This shim is used only on the
+ * abort() path to dump a crash backtrace; returning zero frames keeps the relay
+ * fully functional and lets MTProxy's own error message still print.
+ *
+ * On glibc this file is never used: glibc's real <execinfo.h> wins because this
+ * shim is only injected through -I/tmp/mt-shim/include on musl builds.
  */
 #ifndef MTP_EXECINFO_SHIM_H
 #define MTP_EXECINFO_SHIM_H
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-
-#include <dlfcn.h>
 #include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <unwind.h>
 
-struct __mt_bt_state {
-  void **buffer;
-  int capacity;
-  int count;
-};
-
-static inline _Unwind_Reason_Code __mt_bt_callback(struct _Unwind_Context *ctx,
-                                                   void *arg) {
-  struct __mt_bt_state *st = (struct __mt_bt_state *)arg;
-  uintptr_t ip = _Unwind_GetIP(ctx);
-  if (!ip) {
-    return _URC_NO_REASON;
-  }
-  if (st->count >= st->capacity) {
-    return _URC_END_OF_STACK;
-  }
-  st->buffer[st->count++] = (void *)ip;
-  return _URC_NO_REASON;
-}
-
+/* MTProxy checks the return value and passes it to backtrace_symbols_fd(). */
 static inline int backtrace(void **buffer, int size) {
-  struct __mt_bt_state st;
-  if (!buffer || size <= 0) {
-    return 0;
-  }
-  st.buffer = buffer;
-  st.capacity = size;
-  st.count = 0;
-  _Unwind_Backtrace(__mt_bt_callback, &st);
-  return st.count;
+  (void)buffer;
+  (void)size;
+  return 0;
 }
 
 static inline void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
-  char line[512];
-  for (int i = 0; i < size; i++) {
-    Dl_info info;
-    int len;
-    if (buffer[i] && dladdr(buffer[i], &info) && info.dli_sname && info.dli_saddr) {
-      len = snprintf(line, sizeof line, "%p %s+0x%lx\n", buffer[i],
-                     info.dli_sname,
-                     (unsigned long)((const char *)buffer[i] -
-                                     (const char *)info.dli_saddr));
-    } else if (buffer[i] && dladdr(buffer[i], &info) && info.dli_fname) {
-      len = snprintf(line, sizeof line, "%p %s+0x%lx\n", buffer[i],
-                     info.dli_fname,
-                     (unsigned long)((const char *)buffer[i] -
-                                     (const char *)info.dli_fbase));
-    } else {
-      len = snprintf(line, sizeof line, "%p <unknown>\n", buffer[i]);
-    }
-    if (len > 0) {
-      ssize_t ignored = write(fd, line, (size_t)len);
-      (void)ignored;
-    }
-  }
+  (void)buffer;
+  (void)size;
+  (void)fd;
 }
 
 #endif /* MTP_EXECINFO_SHIM_H */
