@@ -676,7 +676,7 @@ The System accordion includes **Vercel Domain**. It deploys a Node.js WebSocket 
 
 Use a Vercel API token with permission to create deployments/projects, manage project protection, and delete the managed project. Ping uses browser-side `fetch` timing to `/_spider-health` from the administrator's own network (four samples); it is not server-side ping or ICMP. Deleting the connection removes the managed Vercel project. Vercel WebSocket function connections end at the configured function maximum duration (300 seconds in this template on compatible Fluid Compute plans), so clients must be able to reconnect.
 
-The relay template lives under `deploy/vercel/`; the Python deploy/delete integration is `vercel_relay.py`. The WebSocket bridge uses Vercel Functions' native WebSocket support and the `ws` package. Older saved XHTTP relay projects are marked as legacy; delete and recreate them to deploy the new `/ws/vl/{uuid}` bridge.
+The relay template lives under `deploy/vercel/`; the Python deploy/delete integration is `vercel_relay.py`. The WebSocket bridge uses Vercel Functions' native WebSocket support and the `ws` package. Note: the template's dependency manifest is stored in the repository as `deploy/vercel/package.json.vlt` and is uploaded to Vercel as `package.json` (see `_UPLOAD_NAME_OVERRIDES` in `vercel_relay.py`), because a committed `package.json` anywhere in this tree makes stack detectors classify the whole Python panel as a Node app. Do not rename it on disk. Older saved XHTTP relay projects are marked as legacy; delete and recreate them to deploy the new `/ws/vl/{uuid}` bridge.
 
 ## دامنه Vercel (رله TLS + WebSocket)
 
