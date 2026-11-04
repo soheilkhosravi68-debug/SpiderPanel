@@ -11,7 +11,7 @@
       "settings": {
         "clients": [
           {
-            "id": "4e7943a4-14fc-41a9-b0bc-c3a50c5e58e4",
+            "id": "423811c8-8b10-412c-a5f9-fbfa78e001ad",
             "flow": ""
           }
         ],
@@ -27,11 +27,10 @@
           "serverNames": [
             "is1-ssl.mzstatic.com"
           ],
-          "privateKey": "YLiKDzKvOp5dwUBcLr-NtTlIkMRGFiHIE9dsmg6ZhFY",
+          "privateKey": "sNO0SfPANX07wXlCZDgS5zAAl6RCIQXusnp1k5dbAVs",
           "shortIds": [
-            "3eb9f81752"
-          ],
-          "mldsa65Seed": "GW6CRxpTaUDPlvcwVzIXulRkJAxyQqK31--0GVAuXiw"
+            "6ec66bc790"
+          ]
         },
         "xhttpSettings": {
           "path": "/",
