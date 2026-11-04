@@ -1,0 +1,65 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "inbound-default-reality",
+      "listen": "0.0.0.0",
+      "port": 8443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "c5406e2d-4e98-4bbd-bf11-1249b48a34e8",
+            "flow": ""
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "target": "is1-ssl.mzstatic.com:443",
+          "xver": 0,
+          "serverNames": [
+            "is1-ssl.mzstatic.com"
+          ],
+          "privateKey": "sNO0SfPANX07wXlCZDgS5zAAl6RCIQXusnp1k5dbAVs",
+          "shortIds": [
+            "6ec66bc790"
+          ]
+        },
+        "xhttpSettings": {
+          "path": "/",
+          "host": "",
+          "mode": "stream-up",
+          "xPaddingBytes": "100-1000",
+          "scMaxEachPostBytes": "1000000",
+          "scMaxBufferedPosts": 30,
+          "scStreamUpServerSecs": "20-80"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": []
+  }
+}
