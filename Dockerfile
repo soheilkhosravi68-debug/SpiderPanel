@@ -27,6 +27,15 @@ RUN apk upgrade --no-cache \
        curl \
        ca-certificates
 
+# musl/glibc compatibility shims required by upstream MTProxy:
+#  * musl-compat.h  - implements the glibc-only *_r 48-bit RNG family
+#                     (struct drand48_data) that jobs/jobs.h relies on.
+#  * include/execinfo.h - implements backtrace() on top of libgcc's unwinder,
+#                     because musl ships no <execinfo.h>.
+# Both are no-ops when __GLIBC__ is defined.
+COPY deploy/mtproxy/musl-compat.h /tmp/mt-shim/musl-compat.h
+COPY deploy/mtproxy/include/execinfo.h /tmp/mt-shim/include/execinfo.h
+
 # Build MTProxy where supported and leave the binary in /out.
 RUN set -eux; \
     mkdir -p /out; \
@@ -35,7 +44,8 @@ RUN set -eux; \
       x86_64) \
         git clone --depth 1 \
           https://github.com/TelegramMessenger/MTProxy.git /tmp/MTProxy; \
-        if ! make -C /tmp/MTProxy; then \
+        if ! make -C /tmp/MTProxy -j"$(nproc)" \
+              CC="gcc -I/tmp/mt-shim/include -include /tmp/mt-shim/musl-compat.h -Wno-incompatible-pointer-types"; then \
           make -C /tmp/MTProxy clean || true; \
           echo "ERROR: MTProxy compilation failed on x86_64."; \
           exit 1; \
