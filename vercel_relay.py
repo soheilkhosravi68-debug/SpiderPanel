@@ -30,6 +30,16 @@ _SKIP_DIR_NAMES = {"node_modules", ".vercel", ".git"}
 # NOTICE.md is repository documentation and is not deployed into the relay project.
 _SKIP_FILE_NAMES = {"NOTICE.md"}
 
+# The relay template's dependency manifest is stored on disk as
+# "package.json.vlt" and restored to its real name in the deployment payload.
+# Reason: this repository is a Python panel whose only Node code is this
+# uploaded template. A committed `package.json` anywhere in the tree makes
+# stack detectors classify the whole repository as a Node app and report a
+# false "start command runs python" mismatch. Vercel still requires the file to
+# be named `package.json` at the root of the uploaded project, so the rename
+# stays purely local and is undone here.
+_UPLOAD_NAME_OVERRIDES = {"package.json.vlt": "package.json"}
+
 
 class VercelError(RuntimeError):
     """Raised with a human-readable message safe to show the admin."""
