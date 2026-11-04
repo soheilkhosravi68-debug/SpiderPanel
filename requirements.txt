@@ -1,9 +1,10 @@
 anyio==4.16.0
 fastapi==0.162.0
-# Plain uvicorn instead of uvicorn[standard]: the "standard" extra pulls
-# watchfiles (Rust, no musllinux wheel), which is only needed for --reload and
-# is never used by this service. uvloop/httptools are pinned explicitly so the
-# fast event loop and HTTP parser are still used; uvicorn auto-detects them.
+# Plain uvicorn with the performance extras pinned explicitly. The
+# "standard" extra also pulls watchfiles, which is only used by --reload and is
+# never used by this service, so it is intentionally omitted. uvloop/httptools
+# are pinned here so the fast event loop and HTTP parser are still used;
+# uvicorn auto-detects both when installed.
 uvicorn==0.54.0
 uvloop==0.23.0
 httptools==0.9.0
